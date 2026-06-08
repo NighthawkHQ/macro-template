@@ -8,11 +8,14 @@
   },
   "scripts": {
     "build": "node build.mjs",
-    "build:examples": "node build.mjs --examples",
     "typecheck": "tsc --noEmit",
     "test": "npm run typecheck && npm run build"
   },
   "author": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NighthawkHQ/macro-template.git"
+  },
   "license": "ISC",
   "dependencies": {
     "@nighthawk.hq/macro-sdk": "^0.1.3"

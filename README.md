@@ -17,9 +17,11 @@ fresh `dist/<id>.js`. The bundle filename comes from the `id` in
 [build.mjs](build.mjs); rename it to something unique for your macro.
 
 ```bash
-npm run typecheck      # tsc --noEmit
-npm run build:examples # bundles every example under examples/ → dist/examples/
+npm run typecheck      # type-checks src/ and the examples
 ```
+
+`npm run build` only builds your macro in `src/`. The `examples/` are reference
+source to read and copy from — they are not built.
 
 The build externalizes the SDK: the runtime (decorators, widgets, memory
 access) is provided by the host at load time, so it is never bundled into your

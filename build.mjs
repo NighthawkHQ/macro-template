@@ -7,20 +7,6 @@ const outDir = process.env.NIGHTHAWK_MACRO_OUT
   ? resolve(process.env.NIGHTHAWK_MACRO_OUT)
   : join(HERE, 'dist');
 
-// Your macro. Give `id` a unique slug — it becomes the bundle filename.
-const MACRO = { id: 'my-macro', entry: join(HERE, 'src', 'index.ts') };
-
-// Reference macros under examples/. Built with `npm run build:examples`.
-const EXAMPLES = [
-  { id: 'roblox-anti-afk', entry: join(HERE, 'examples', 'roblox', 'anti-afk', 'index.ts') },
-  { id: 'roblox-memory-reader', entry: join(HERE, 'examples', 'roblox', 'memory-reader', 'index.ts') },
-  { id: 'ui-tour', entry: join(HERE, 'examples', 'ui-tour', 'index.ts') },
-];
-
-const targets = process.argv.includes('--examples')
-  ? EXAMPLES.map((m) => ({ ...m, outDir: join(outDir, 'examples') }))
-  : [{ ...MACRO, outDir }];
-
-for (const { id, entry, outDir: dir } of targets) {
-  await buildMacro({ id, entry, outDir: dir, minify: true });
-}
+// Builds your macro into a single minified bundle. Give `id` a unique slug —
+// it becomes the bundle filename (dist/<id>.js).
+await buildMacro({ id: 'my-macro', entry: join(HERE, 'src', 'index.ts'), outDir, minify: true });
