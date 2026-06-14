@@ -113,7 +113,13 @@ through the typed adapter:
 
 ```ts
 const rbx = Roblox.bind(this.process, this.ctx.offsets);
-if (!rbx.validate().ok) return;          // offsets stale for this Roblox build
+const check = rbx.validate();
+if (!check.ok) {
+  // check.reason is a ready-to-surface message (Roblox closed / not in a game /
+  // stale offsets); check.problems holds the diagnostic detail for logs.
+  this.log.warn(check.reason, { problems: check.problems });
+  return;
+}
 const name = rbx.localPlayer()?.name();
 ```
 
