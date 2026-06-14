@@ -55,8 +55,8 @@ export default class MemoryReaderMacro extends MacroBase<State> {
     const rbx = Roblox.bind(this.process, this.ctx.offsets);
     const check = rbx.validate();
     if (!check.ok) {
-      this.setState({ ...INITIAL, attached: true, error: 'offsets look stale for this Roblox build' });
-      this.log.warn('Roblox offsets failed validation', { problems: check.problems });
+      this.setState({ ...INITIAL, attached: true, error: check.reason });
+      this.log.warn(check.reason, { problems: check.problems });
       return;
     }
     this.#rbx = rbx;
