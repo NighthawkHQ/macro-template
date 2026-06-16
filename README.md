@@ -34,9 +34,10 @@ src/index.ts            your macro (what `npm run build` ships)
 build.mjs               bundles a macro entry → dist/<id>.js, minified
 tsconfig.json           TypeScript config (standard decorators, strict)
 examples/
-  roblox/anti-afk/      tap the jump key on a timer (input only)
-  roblox/memory-reader/ read values from Roblox memory (read-only)
-  ui-tour/              every setting kind, widget, overlay, and action
+  roblox/anti-afk/             tap the jump key on a timer (input only)
+  roblox/memory-reader/        read values from Roblox memory (read-only)
+  roblox/coordinated-rotation/ take turns with other macros (workflow driver)
+  ui-tour/                     every setting kind, widget, overlay, and action
 ```
 
 ## Anatomy of a macro
@@ -131,11 +132,54 @@ ship offsets, and they're regenerated whenever Roblox updates. See
 
 Memory access is **read-only** by design. There is no API to write game memory.
 
+## Coordinating with other macros
+
+Several macros can run on one game at the same time, but they all share **one
+cursor and one keyboard**. If two of them send input at once they fight — one
+yanks the cursor mid-cast of the other, or a keypress lands in the wrong place.
+
+The **workflow driver** fixes this by letting macros take turns at the
+granularity of a whole **multi-tick activity** — a full cast→reel cycle, a key
+combo, a feeding sequence — not individual presses. Use it whenever one logical
+action spans more than one tick *and* another macro might run on the same game.
+A single self-contained tap (like anti-afk) doesn't need it.
+
+It's two calls on `this.workflow`:
+
+```ts
+@OnTick(5)
+async tick() {
+  // Claim the shared input channel for this whole activity. Returns false when
+  // another macro is driving OR the game isn't focused — either way, wait your
+  // turn. One check covers both focus and turn-taking.
+  if (!this.workflow.acquire('rotation')) return;
+
+  // …you're the driver — run your multi-tick sequence across this and the next
+  // few ticks. As long as you keep calling acquire() each tick, no other macro
+  // can interrupt you halfway…
+
+  // When the activity finishes, drop any held input and hand off at this clean
+  // boundary so another macro gets a turn:
+  await this.input.releaseAll();
+  this.workflow.release('rotation');
+}
+```
+
+`acquire(name)` is the gate you call every driving tick; `release(name)` hands
+the channel back immediately at a safe boundary instead of waiting to be timed
+out. Always `releaseAll()` before you release — otherwise the next macro starts
+with a key stuck down. A macro that runs alone always gets `true`, so adding the
+gate is safe even if your macro usually runs solo. See
+[examples/roblox/coordinated-rotation](examples/roblox/coordinated-rotation/index.ts).
+
 ## Examples
 
 - **[roblox/anti-afk](examples/roblox/anti-afk/index.ts)** — taps the jump key
   on a timer with optional jitter; input only, no memory.
 - **[roblox/memory-reader](examples/roblox/memory-reader/index.ts)** — attaches
   to Roblox and reads the local player and workspace; read-only.
+- **[roblox/coordinated-rotation](examples/roblox/coordinated-rotation/index.ts)** —
+  plays a multi-tick key combo and uses the workflow driver (`acquire`/`release`)
+  to take turns with other macros on the same game.
 - **[ui-tour](examples/ui-tour/index.ts)** — every setting kind, the panel
   widgets, an overlay HUD, and bindable actions, with no game target.
