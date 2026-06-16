@@ -26,7 +26,7 @@ type State = {
   nextInSeconds: number;
 };
 
-@Macro({ target: robloxTarget() })
+@Macro({ target: robloxTarget(), capabilities: { input: true } })
 export default class AntiAfkMacro extends MacroBase<State> {
   static settings = {
     intervalSeconds: number({
@@ -68,8 +68,7 @@ export default class AntiAfkMacro extends MacroBase<State> {
     const now = this.ctx.now();
     this.setState({ nextInSeconds: Math.max(0, Math.ceil((this.#nextJumpAt - now) / 1000)) });
     if (now < this.#nextJumpAt) return;
-    await this.#jump();
-    this.#scheduleNext();
+    if (await this.#jump()) this.#scheduleNext();
   }
 
   @OnStop()
@@ -79,14 +78,20 @@ export default class AntiAfkMacro extends MacroBase<State> {
 
   @Action({ id: 'jumpNow', bindable: true, label: 'Jump now', suggestedKey: 'F8' })
   async jumpNow() {
-    await this.#jump();
-    this.#scheduleNext();
+    if (await this.#jump()) this.#scheduleNext();
   }
 
-  async #jump() {
+  async #jump(): Promise<boolean> {
+    // Sending input requires the `input` capability AND holding the cooperative driver lock —
+    // the host drops input otherwise. acquire() returns false when another macro is driving, so
+    // we skip this jump and try again next tick rather than fight over the keyboard. We hold the
+    // lock only for the tap, then release it so co-running macros get their turn.
+    if (!this.workflow.acquire('anti-afk')) return false;
     const key = (this.settings.jumpKey as string) || 'space';
     await this.input.tapKey(key);
+    this.workflow.release('anti-afk');
     this.setState({ jumps: this.state.jumps + 1 });
+    return true;
   }
 
   #scheduleNext() {

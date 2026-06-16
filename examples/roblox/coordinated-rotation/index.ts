@@ -33,7 +33,7 @@ type State = {
   nextInSeconds: number;
 };
 
-@Macro({ target: robloxTarget() })
+@Macro({ target: robloxTarget(), capabilities: { input: true } })
 export default class CoordinatedRotationMacro extends MacroBase<State> {
   static settings = {
     comboKeys: string({
