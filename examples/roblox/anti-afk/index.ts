@@ -33,9 +33,9 @@ export default class AntiAfkMacro extends MacroBase<State> {
       label: 'Jump every (seconds)',
       description: 'How long to wait between jumps.',
       min: 1,
-      max: 600,
+      max: 6000,
       step: 1,
-      default: 60,
+      default: 605,
     }),
     jitterSeconds: number({
       label: 'Random jitter (± seconds)',
